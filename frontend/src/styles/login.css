@@ -1,0 +1,142 @@
+@import url("https://fonts.googleapis.com/css?family=Fira+Sans");
+
+html, body {
+    position: relative;
+    min-height: 100vh;
+   
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fira Sans', Helvetica, Arial, sans-serif;
+}
+
+.form-structor {
+    background-color: #222;
+    border-radius: 15px;
+    height: 550px;
+    width: 350px;
+    position: relative;
+    overflow: hidden;
+}
+
+.signup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 65%;
+    z-index: 5;
+    transition: all 0.3s ease;
+}
+
+    .signup.slide-up {
+        top: -50%;
+        transform: translate(-50%, 0%);
+        transition: all 0.3s ease;
+    }
+
+        .signup.slide-up .form-holder,
+        .signup.slide-up .submit-btn {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .signup.slide-up .form-title {
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+    .signup .form-title {
+        color: #fff;
+        font-size: 1.7em;
+        text-align: center;
+    }
+
+.form-holder {
+    border-radius: 15px;
+    background-color: #fff;
+    overflow: hidden;
+    margin-top: 50px;
+    opacity: 1;
+    visibility: visible;
+    transition: all 0.3s ease;
+}
+
+.input {
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    display: block;
+    height: 30px;
+    line-height: 30px;
+    padding: 8px 15px;
+    border-bottom: 1px solid #eee;
+    width: 100%;
+    font-size: 12px;
+}
+
+    .input:last-child {
+        border-bottom: 0;
+    }
+
+.submit-btn {
+    background-color: rgba(0, 0, 0, 0.4);
+    color: rgba(255, 255, 255, 0.7);
+    border: 0;
+    border-radius: 15px;
+    display: block;
+    margin: 15px auto;
+    padding: 15px 45px;
+    width: 100%;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+    .submit-btn:hover {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+
+.login {
+    position: absolute;
+    top: 20%;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #fff;
+    z-index: 5;
+    transition: all 0.3s ease;
+}
+
+    .login.slide-up {
+        top: 90%;
+        transition: all 0.3s ease;
+    }
+
+.center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 65%;
+    z-index: 5;
+    transition: all 0.3s ease;
+}
+
+    .center .form-title {
+        color: #000;
+        font-size: 1.7em;
+        text-align: center;
+    }
+
+    .center .form-holder {
+        border-radius: 15px;
+        background-color: #fff;
+        border: 1px solid #eee;
+        overflow: hidden;
+        margin-top: 50px;
+        opacity: 1;
+        visibility: visible;
+        transition: all 0.3s ease;
+    }
