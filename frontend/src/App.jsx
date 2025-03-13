@@ -1,10 +1,13 @@
-import DeviceTable from "./components/DeviceTable";
+import Sidebar from "./components/Sidebar";
+import ManageDevices from "./pages/ManageDevices";
 
 function App() {
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-4 text-center">Gestión de Dispositivos IoT</h1>
-      <DeviceTable />
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <div className="flex-grow p-8 bg-gray-100">
+        <ManageDevices />
+      </div>
     </div>
   );
 }

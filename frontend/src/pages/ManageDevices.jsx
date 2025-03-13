@@ -5,14 +5,12 @@ const ManageDevices = () => {
   const [devices, setDevices] = useState([]);
   const [newDevice, setNewDevice] = useState("");
 
-  // Cargar los dispositivos al iniciar
   useEffect(() => {
     axios.get("http://127.0.0.1:5000/devices")
       .then(response => setDevices(response.data.devices))
       .catch(error => console.error("Error al obtener dispositivos:", error));
   }, []);
 
-  // Agregar un dispositivo
   const handleAddDevice = () => {
     if (!newDevice.trim()) return;
     axios.post("http://127.0.0.1:5000/devices", { name: newDevice })
@@ -23,7 +21,6 @@ const ManageDevices = () => {
       .catch(error => console.error("Error al agregar dispositivo:", error));
   };
 
-  // Eliminar un dispositivo
   const handleDeleteDevice = (name) => {
     axios.delete(`http://127.0.0.1:5000/devices/${name}`)
       .then(() => setDevices(devices.filter(device => device.name !== name)))
@@ -31,15 +28,20 @@ const ManageDevices = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className="flex min-h-screen w-full bg-gray-100 justify-start">
       {/* Sidebar de Sensores */}
-      <div className="w-1/5 bg-yellow-500 p-6 text-center text-lg font-bold text-white shadow-lg h-full flex items-center justify-center">
-        Sensores
+      <div className="w-1/5 bg-yellow-500 p-6 text-center text-lg font-bold text-white shadow-lg flex flex-col items-center h-screen">
+        <h3 className="mb-4">Sensores</h3>
+        <ul className="text-sm">
+          <li>🌡️ Sensor de Temperatura</li>
+          <li>💧 Sensor de Humedad</li>
+          <li>🎥 Cámara de Seguridad</li>
+        </ul>
       </div>
 
-      {/* Sección principal que ocupa todo el espacio restante */}
-      <div className="w-4/5 p-8 bg-white shadow-md rounded-lg flex flex-col justify-between">
-        <h2 className="text-3xl font-bold mb-6 text-center text-gray-700">Gestión de Dispositivos IoT</h2>
+      {/* Sección principal */}
+      <div className="w-4/5 px-4 py-8 flex flex-col">
+        <h2 className="text-3xl font-bold mb-6 text-gray-700 text-center">Gestión de Dispositivos IoT</h2>
 
         {/* Botones superiores alineados */}
         <div className="flex justify-between mb-6">
@@ -51,9 +53,9 @@ const ManageDevices = () => {
           </button>
         </div>
 
-        {/* Contenedor de tabla con diseño mejorado */}
-        <div className="flex-grow overflow-hidden rounded-lg shadow-lg border">
-          <table className="w-full border-collapse bg-white">
+        {/* Tabla de dispositivos */}
+        <div className="flex-grow overflow-hidden rounded-lg shadow-lg border bg-white w-full">
+          <table className="w-full border-collapse">
             <thead className="bg-gray-800 text-white">
               <tr>
                 <th className="border p-4 text-left">Nombre</th>
@@ -85,7 +87,7 @@ const ManageDevices = () => {
         </div>
 
         {/* Input para agregar un nuevo dispositivo */}
-        <div className="mt-6 flex justify-center items-center gap-4">
+        <div className="mt-6 flex justify-start items-center gap-4 w-full">
           <input
             type="text"
             className="border p-3 flex-grow max-w-lg rounded-lg shadow-sm focus:ring focus:ring-blue-300"
