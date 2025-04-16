@@ -1,59 +1,79 @@
+import { Link, useLocation } from "react-router-dom";
+import { Home, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 
-const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+function Sidebar({ darkMode }) {
+  const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
+
+  const toggleCollapse = () => setCollapsed(!collapsed);
 
   return (
-    <>
-      {/* Botón para abrir/cerrar sidebar */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 mt-2 ml-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
-      >
-        <span className="sr-only">Open sidebar</span>
-        <svg
-          className="w-6 h-6"
-          aria-hidden="true"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            clipRule="evenodd"
-            fillRule="evenodd"
-            d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"
-          ></path>
-        </svg>
-      </button>
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed top-0 left-0 z-40 w-64 h-screen bg-gray-50 dark:bg-gray-800 transition-transform ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } sm:translate-x-0`}
-      >
-        <div className="h-full px-3 py-4 overflow-y-auto">
-          <ul className="space-y-2 font-medium">
-            <li>
-              <a href="#" className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                <span className="ml-3">Dashboard</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                <span className="ml-3">Gestión de Dispositivos</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                <span className="ml-3">Usuarios</span>
-              </a>
-            </li>
-          </ul>
+    <aside
+      className={`d-flex flex-column justify-content-between p-3 sidebar ${collapsed ? "collapsed" : ""}`}
+      style={{
+        width: collapsed ? "80px" : "250px",
+        height: "100vh",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        zIndex: 1000,
+        backgroundColor: darkMode ? "#1e1e2f" : "rgba(255, 255, 255, 0.2)",
+        backdropFilter: "blur(10px)",
+        boxShadow: "2px 0 10px rgba(0,0,0,0.3)",
+        transition: "width 0.3s ease"
+      }}
+    >
+      <div>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          {!collapsed && <h3 className="fw-bold">🌐 Badevel</h3>}
+          <button
+            className="btn btn-sm btn-outline-light"
+            onClick={toggleCollapse}
+            style={{ border: "none", background: "transparent", color: "inherit" }}
+            title={collapsed ? "Ouvrir" : "Fermer"}
+          >
+            {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
         </div>
-      </aside>
-    </>
+
+        <ul className="nav flex-column">
+          <li className="nav-item mb-2">
+            <Link
+              to="/manage-devices"
+              className={`nav-link d-flex align-items-center gap-2 ${
+                location.pathname === "/manage-devices" ? "active text-primary" : "text-white"
+              }`}
+            >
+              <Home size={20} /> {!collapsed && "Dispositivos"}
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              to="/configuracion"
+              className={`nav-link d-flex align-items-center gap-2 ${
+                location.pathname === "/configuracion" ? "active text-primary" : "text-white"
+              }`}
+            >
+              <Settings size={20} /> {!collapsed && "Configuración"}
+            </Link>
+          </li>
+        </ul>
+      </div>
+
+      {!collapsed && (
+        <div className="text-center small text-muted">
+          <p>&copy; 2025 Badevel</p>
+        </div>
+      )}
+    </aside>
   );
-};
+}
 
 export default Sidebar;
+
+import PropTypes from "prop-types";
+
+Sidebar.propTypes = {
+  darkMode: PropTypes.bool.isRequired,
+};

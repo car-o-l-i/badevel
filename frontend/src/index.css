@@ -1,17 +1,20 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Estilo base para asegurar que el fondo cubre toda la pantalla */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+}
 
-
+/* Tema general */
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -23,16 +26,17 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
+  display: block; /* No usar flex aquí para que no colapse con login */
   min-width: 320px;
   min-height: 100vh;
+  background-color: #242424;
+  color: rgba(255, 255, 255, 0.87);
 }
 
 h1 {
@@ -51,9 +55,11 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -64,10 +70,331 @@ button:focus-visible {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }
 }
+
+/* Estilo para el Sidebar */
+.sidebar {
+  width: 250px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background-color: #1a1a1a;
+  padding: 10px;
+  z-index: 1000;
+}
+
+/* Estilo para el contenido principal */
+.content {
+  margin-left: 250px;
+  padding: 20px;
+  flex: 1;
+}
+
+/* Estilo para pantallas pequeñas */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    position: relative;
+    height: auto;
+  }
+
+  .content {
+    margin-left: 0;
+    padding: 20px;
+  }
+
+  .nav-link {
+    padding-left: 10px;
+  }
+}
+
+
+/* Overlay y fondo dinámico */
+.app-wrapper {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.background-image {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  z-index: 0;
+}
+
+.background-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  background: rgba(255, 255, 255, 0.5);
+  transition: background 0.3s ease;
+}
+
+/* Variables globales para modo claro */
+.light-mode {
+  --text-color: #222;
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+.light-mode .background-overlay {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Variables globales para modo oscuro */
+.dark-mode {
+  --text-color: #f5f5f5;
+  --card-bg: rgba(0, 0, 0, 0.6);
+  --card-shadow: 0 4px 20px rgba(255,255,255,0.05);
+}
+.dark-mode .background-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Sidebar dinámico con modo claro/oscuro */
+.sidebar {
+  width: 250px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  padding: 10px;
+  z-index: 1000;
+  transition: background-color 0.4s ease, color 0.4s ease, backdrop-filter 0.3s ease;
+}
+
+.sidebar-dark {
+  background-color: #1e1e2f;
+  color: white;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.4);
+}
+
+.sidebar-light {
+  background-color: rgba(255, 255, 255, 0.75);
+  color: #1e1e2f;
+  backdrop-filter: blur(10px);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-light .nav-link {
+  color: #1e1e2f;
+}
+.sidebar-light .nav-link.active {
+  color: #0d6efd;
+  font-weight: 500;
+}
+
+/* Enlaces del sidebar */
+.sidebar .nav-link {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #00bcd4;
+}
+
+.sidebar .nav-link.active {
+  background-color: rgba(0, 188, 212, 0.2);
+  color: #00bcd4;
+}
+/* chatbot flotante*/
+.chatbot-toggle {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 9999;
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease;
+}
+.chatbot-toggle:hover {
+  background-color: #0a58ca;
+}
+
+.chatbot-container {
+  position: fixed;
+  bottom: 90px;
+  right: 25px;
+  width: 320px;
+  height: 400px;
+  background-color: var(--card-bg, white);
+  color: var(--text-color, #222);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.chatbot-header {
+  background-color: #0d6efd;
+  color: white;
+  padding: 10px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chatbot-body {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  font-size: 14px;
+}
+/*chatbot flotante*/
+.chatbot-toggle {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 9999;
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.3s ease;
+}
+.chatbot-toggle:hover {
+  background-color: #0a58ca;
+}
+
+.chatbot-container {
+  position: fixed;
+  bottom: 90px;
+  right: 25px;
+  width: 320px;
+  height: 400px;
+  background-color: var(--card-bg, white);
+  color: var(--text-color, #222);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.chatbot-header {
+  background-color: #0d6efd;
+  color: white;
+  padding: 10px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chatbot-body {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  font-size: 14px;
+}
+
+/*Icono del chatbot flotante*/
+.chatbot-toggle {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 9999;
+  background: linear-gradient(135deg, #4f8df7, #7ba7ff);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 55px;
+  height: 55px;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, background-color 0.3s ease;
+}
+.chatbot-toggle:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #3c78e4, #6e97f7);
+}
+
+.chatbot-container {
+  position: fixed;
+  bottom: 90px;
+  right: 25px;
+  width: 340px;
+  height: 420px;
+  background-color: var(--card-bg, rgba(255, 255, 255, 0.95));
+  color: var(--text-color, #222);
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.chatbot-header {
+  background: linear-gradient(135deg, #4f8df7, #7ba7ff);
+  color: white;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chatbot-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  font-size: 14px;
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+/**/

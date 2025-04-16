@@ -1,43 +1,108 @@
-
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Fondo general y tipografía limpia */
+body {
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  background-color: transparent;
+  color: #f5f5f5;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+h2, h3, h5 {
+  font-weight: bold;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Sidebar */
+.sidebar {
+  background-color: #1e1e2f;
+  color: #fff;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+}
+
+/* Enlaces del sidebar */
+.sidebar .nav-link {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #00bcd4;
+}
+
+/* Ruta activa */
+.sidebar .nav-link.active {
+  background-color: rgba(0, 188, 212, 0.2);
+  color: #00bcd4;
+}
+
+/* Tarjetas */
+.card-glass {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.card-glass:hover {
+  transform: scale(1.02);
+}
+
+/* Botones */
+.btn-outline-info,
+.btn-outline-warning {
+  border-width: 2px;
+}
+
+.btn-outline-info {
+  color: #00bcd4;
+  border-color: #00bcd4;
+}
+
+.btn-outline-warning {
+  color: #ffc107;
+  border-color: #ffc107;
+}
+
+.btn-outline-info:hover {
+  background-color: #00bcd4;
+  color: #fff;
+}
+
+.btn-outline-warning:hover {
+  background-color: #ffc107;
+  color: #000;
+}
+
+/* Botón de cerrar (X) */
+.btn-close-custom {
+  color: #f28b82;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  cursor: pointer;
+}
+
+.btn-close-custom:hover {
+  color: #ff4c4c;
+}
+
+/* Ajustes para el texto que desaparece en modo oscuro */
+h2, .form-label, label, p, strong {
+  color: inherit;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
   }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
+/**/

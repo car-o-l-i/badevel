@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import * as XLSX from "xlsx";
 import { getDevices, createDevice, deleteDevice } from "../api/api";
 
+
 const DeviceTable = () => {
   const [devices, setDevices] = useState([]);
   const [newDevice, setNewDevice] = useState({ name: "", type: "", location: "" });

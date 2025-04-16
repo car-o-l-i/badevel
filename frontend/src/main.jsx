@@ -1,41 +1,24 @@
-/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import "./index.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
-import Navbar from "./components/Navbar";
-import Login from "./pages/Login";
-import Chatbot from "./pages/Chatbot";
-import Dashboard from "./pages/Dashboard";
-import ManageDevices from "./pages/ManageDevices";
-import GraphVisualization from "./pages/GraphVisualization"; 
+import App from "./App";
 
-const App = () => {
-  const location = useLocation();
-  const hideNavbar = location.pathname === "/"; // Solo oculta el navbar en la página de login
-
-  return (
-    <div className="flex">
-      {!hideNavbar && <Navbar />}
-      <div className={hideNavbar ? "w-full p-8" : "ml-64 p-8 w-full"}>
-        <Routes>
-          <Route path="/" element={<ManageDevices />} />
-          <Route path="/login" element={<Login />} />  {/* Ruta para el login */}
-          <Route path="/chat" element={<Chatbot />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/gestion" element={<ManageDevices />} />
-          <Route path="/grafo" element={<GraphVisualization />} />
-        </Routes>
-      </div>
-    </div>
-  );
-};
+// Reemplaza este ID con tu propio client ID de Google OAuth
+const clientId = "632736143613-tu889mecmg8okku5dv23j4omh9j2a2ir.apps.googleusercontent.com";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <Router>
-      <App />
-    </Router>
+    <GoogleOAuthProvider clientId={clientId}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   </React.StrictMode>
 );
+
+

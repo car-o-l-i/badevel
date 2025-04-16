@@ -1,5 +1,5 @@
  
-import React, { useState } from "react";
+import  { useState } from "react";
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([]);
@@ -24,7 +24,7 @@ const Chatbot = () => {
       <div className="w-3/4 flex mt-4">
         <input
           type="text"
-          placeholder="Escribe tu pregunta..."
+          placeholder="Write you're  question ..."
           className="border p-2 flex-grow rounded"
           value={input}
           onChange={(e) => setInput(e.target.value)}

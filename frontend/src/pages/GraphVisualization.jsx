@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import NeoVis from "neovis.js";
 
 const GraphVisualization = () => {
-  const visRef = useRef(null);
+  
 
   useEffect(() => {
     const config = {

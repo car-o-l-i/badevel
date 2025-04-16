@@ -1,81 +1,212 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import PropTypes from "prop-types";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 import "../styles/login.css";
 
-const Login = () => {
-    const [isLoginActive, setIsLoginActive] = useState(true);
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const navigate = useNavigate();
+import bg1 from "../assets/picture1.png";
+import bg2 from "../assets/picture2.png";
+import bg3 from "../assets/picture3.png";
+import bg4 from "../assets/picture4.png";
 
-    // Función para alternar entre login y registro
-    const handleFormSwitch = () => {
-        setIsLoginActive(!isLoginActive);
-    };
+const images = [bg1, bg2, bg3, bg4];
 
-    // Función para manejar el inicio de sesión
-    const handleLogin = async () => {
-        try {
-            const response = await axios.post("http://127.0.0.1:5000/login", { username, password });
-            if (response.data.success) {
-                localStorage.setItem("token", response.data.token);
-                navigate("/chat"); // Redirigir al chatbot
-            } else {
-                setError("Usuario o contraseña incorrectos.");
-            }
-        } catch (err) {
-            console.error(err);
-            setError("Error en el servidor.");
-        }
-    };
+const Login = ({ onLogin }) => {
+  const navigate = useNavigate();
+  const [isLogin, setIsLogin] = useState(true);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [registerData, setRegisterData] = useState({ name: "", email: "", password: "" });
+  const [error, setError] = useState("");
+  const [backgroundIndex, setBackgroundIndex] = useState(0);
 
-    return (
-        <div className="form-structor">
-            {/* Sección de registro */}
-            <div className={`signup ${isLoginActive ? "slide-up" : ""}`}>
-                <h2 className="form-title" onClick={handleFormSwitch}>
-                    <span>or</span> Sign up
-                </h2>
-                <div className="form-holder">
-                    <input type="text" className="input" placeholder="Nombre" />
-                    <input type="email" className="input" placeholder="Email" />
-                    <input type="password" className="input" placeholder="Contraseña" />
-                </div>
-                <button className="submit-btn">Registrarse</button>
-            </div>
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBackgroundIndex((prev) => (prev + 1) % images.length);
+    }, 6000); // every 6 seconds
+    return () => clearInterval(interval);
+  }, []);
 
-            {/* Sección de inicio de sesión */}
-            <div className={`login ${isLoginActive ? "" : "slide-up"}`}>
-                <div className="center">
-                    <h2 className="form-title" onClick={handleFormSwitch}>
-                        <span>or</span> Log in
-                    </h2>
-                    <div className="form-holder">
-                        <input
-                            type="text"
-                            placeholder="Usuario"
-                            className="input"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                        />
-                        <input
-                            type="password"
-                            placeholder="Contraseña"
-                            className="input"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </div>
-                    <button className="submit-btn" onClick={handleLogin}>
-                        Entrar
-                    </button>
-                    {error && <p className="text-red-500 text-center mt-2">{error}</p>}
-                </div>
-            </div>
+  const handleLogin = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem("token", data.token);
+        onLogin(data.role);
+        navigate(data.role === "admin" ? "/manage-devices" : "/chatbot");
+      } else {
+        setError("Nom d'utilisateur ou mot de passe incorrect.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Erreur du serveur.");
+    }
+  };
+
+  const handleGoogleLogin = (credentialResponse) => {
+    try {
+      const decoded = jwtDecode(credentialResponse.credential);
+      console.log("✅ Utilisateur via Google:", decoded);
+      localStorage.setItem("token", credentialResponse.credential);
+      onLogin("user");
+      navigate("/chatbot");
+    } catch (e) {
+      console.error("❌ Erreur avec le token Google:", e);
+    }
+  };
+
+  return (
+    <GoogleOAuthProvider clientId="TU_CLIENT_ID">
+      <div
+        className="login-wrapper"
+        style={{
+          backgroundImage: `url(${images[backgroundIndex]})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          height: "100vh",
+          width: "100vw",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div
+          className={`login-box transition-box ${isLogin ? "fade-in" : "slide-in"}`}
+          style={{
+            backdropFilter: "blur(10px)",
+            backgroundColor: "rgba(255, 255, 255, 0.15)",
+            borderRadius: "12px",
+            padding: "2rem 3rem",
+            width: "400px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            color: "white",
+          }}
+        >
+          <h2 className="text-center mb-4" style={{ fontWeight: 600 }}>
+            {isLogin ? "Se connecter" : "Créer un compte"}
+          </h2>
+
+          {isLogin ? (
+            <>
+              <div className="form-group mb-3">
+              <label>Nom d&apos;utilisateur</label>
+
+                <input
+                  type="text"
+                  className="form-control"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="ex. admin"
+                />
+              </div>
+
+              <div className="form-group mb-4">
+                <label>Mot de passe</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="ex. admin_password"
+                />
+              </div>
+
+              <button onClick={handleLogin} className="btn btn-primary w-100 mb-3">
+                Connexion
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="form-group mb-3">
+                <label>Nom</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={registerData.name}
+                  onChange={(e) =>
+                    setRegisterData({ ...registerData, name: e.target.value })
+                  }
+                  placeholder="Votre nom complet"
+                />
+              </div>
+
+              <div className="form-group mb-3">
+                <label>Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={registerData.email}
+                  onChange={(e) =>
+                    setRegisterData({ ...registerData, email: e.target.value })
+                  }
+                  placeholder="email@example.com"
+                />
+              </div>
+
+              <div className="form-group mb-4">
+                <label>Mot de passe</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={registerData.password}
+                  onChange={(e) =>
+                    setRegisterData({ ...registerData, password: e.target.value })
+                  }
+                  placeholder="Créer un mot de passe"
+                />
+              </div>
+
+              <button className="btn btn-success w-100 mb-3">S&apos;inscrire</button>
+            </>
+          )}
+
+          {error && <div className="alert alert-danger text-center p-2">{error}</div>}
+
+          <div className="text-center my-3">
+            <span className="text-white-50">
+              {isLogin ? "Pas de compte ?" : "Déjà inscrit ?"}{" "}
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                className="btn btn-link text-white"
+                style={{ textDecoration: "underline", padding: 0 }}
+              >
+                {isLogin ? "Créer un compte" : "Se connecter"}
+              </button>
+            </span>
+          </div>
+
+          <hr style={{ borderColor: "rgba(255,255,255,0.2)" }} />
+
+          <div className="text-center mb-2 text-white-50">Ou continuez avec</div>
+
+          <div className="google-login">
+
+            <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={() => console.log("Échec de connexion Google")}
+              width="100%"
+              text="signin_with"
+              theme="filled_blue"
+              shape="pill"
+            />
+          </div>
         </div>
-    );
+      </div>
+    </GoogleOAuthProvider>
+  );
 };
+
+Login.propTypes = {
+  onLogin: PropTypes.func.isRequired,
+};
+
 
 export default Login;
