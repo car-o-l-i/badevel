@@ -1,38 +1,66 @@
-import { useEffect } from "react";
-import NeoVis from "neovis.js";
+import { useEffect, useRef } from "react";
+import { Network } from "vis-network/standalone";
+import axios from "axios";
 
 const GraphVisualization = () => {
-  
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    const config = {
-      containerId: "viz",
-      neo4j: {
-        serverUrl: "bolt://localhost:7687",
-        serverUser: "neo4j",
-        serverPassword: "Password123", // Asegúrate de usar la contraseña correcta
-      },
-      labels: {
-        Device: {
-          caption: "name",
-          size: "pagerank",
-          community: "community",
-        },
-      },
-      relationships: {
-        CONNECTED_TO: {
-          caption: true,
-        },
-      },
-      initialCypher: "MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50",
+    const fetchGraphData = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/graph-data");
+        const { nodes, links } = response.data;
+
+        const data = {
+          nodes: nodes.map((node) => ({
+            id: node.id,
+            label: node.name || node.id,
+            group: node.label
+          })),
+          edges: links.map((link) => ({
+            from: link.source,
+            to: link.target,
+            label: link.type,
+            arrows: "to"
+          }))
+        };
+
+        const options = {
+          nodes: {
+            shape: "dot",
+            size: 20,
+            font: {
+              size: 14,
+              color: "#000"
+            }
+          },
+          edges: {
+            arrows: {
+              to: { enabled: true, scaleFactor: 0.7 }
+            },
+            font: {
+              align: "top"
+            }
+          },
+          physics: {
+            stabilization: false,
+            barnesHut: {
+              gravitationalConstant: -2000,
+              springLength: 100
+            }
+          }
+        };
+
+        new Network(containerRef.current, data, options);
+      } catch (error) {
+        console.error("Error al cargar el grafo:", error);
+      }
     };
 
-    const viz = new NeoVis(config);
-    viz.render();
+    fetchGraphData();
   }, []);
 
-  return <div id="viz" className="w-full h-screen border"></div>;
+  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
 };
 
 export default GraphVisualization;
-

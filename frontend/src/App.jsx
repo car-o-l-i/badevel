@@ -39,7 +39,6 @@ function App() {
       {/* Sidebar solo cuando el usuario está logueado y no está en login */}
 {!isLoginPage && userRole && <Sidebar darkMode={darkMode} />}
 
-
       <div
         style={{
           marginLeft: !isLoginPage && userRole ? "250px" : "0",
@@ -49,7 +48,6 @@ function App() {
           zIndex: 1,
         }}
       >
-
         <Routes>
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
           

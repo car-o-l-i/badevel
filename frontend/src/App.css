@@ -1,3 +1,4 @@
+
 /* Fondo general y tipografía limpia */
 body {
   font-family: 'Segoe UI', Roboto, sans-serif;
@@ -105,4 +106,27 @@ h2, .form-label, label, p, strong {
   }
 }
 
-/**/
+/* Botón flotante del chatbot */
+.chatbot-toggle {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 9999;
+  background: linear-gradient(135deg, #4f8df7, #7ba7ff);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+.chatbot-toggle:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #3c78e4, #6e97f7);
+}
+

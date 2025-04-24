@@ -5,11 +5,13 @@ import os
 import csv
 import jwt  # type: ignore
 import datetime
+import requests  # para importar CSV
+import io  # para procesar texto de CSV
 from werkzeug.security import check_password_hash, generate_password_hash  # type: ignore
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Habilita CORS para todas las rutas
+CORS(app)
 
 # Configuración de Neo4j
 NEO4J_URI = "bolt://localhost:7687"
@@ -18,11 +20,11 @@ NEO4J_PASSWORD = "Password123"
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-# Configuración de OpenAI (usa tu API Key)
-OPENAI_API_KEY = "TU_API_KEY_AQUI"  # Reemplaza con tu clave de OpenAI
+# OpenAI
+OPENAI_API_KEY = "TU_API_KEY_AQUI"
 openai.api_key = OPENAI_API_KEY
 
-# Simulación de base de datos para usuarios
+# Usuarios simulados
 users_db = {
     "admin": {
         "password": generate_password_hash("admin_password"),
@@ -39,6 +41,7 @@ SECRET_KEY = "mi_clave_secreta"
 @app.route('/')
 def home():
     return jsonify({"message": "Flask is connected to Neo4j and OpenAI!"})
+
 
 # CRUD para dispositivos
 @app.route("/devices", methods=["POST"])
@@ -95,6 +98,8 @@ def delete_device(name):
     else:
         return jsonify({"error": "Device not found"}), 404
 
+
+# Preguntas a OpenAI
 @app.route('/ask', methods=['POST'])
 def ask():
     data = request.json
@@ -120,7 +125,8 @@ def ask():
     except Exception as e:
         return jsonify({"error": f"Failed to process request: {str(e)}"}), 500
 
-# CSV upload (incluye soporte para OPTIONS preflight)
+
+# Subida manual de CSV desde frontend
 @app.route("/upload-csv", methods=["POST", "OPTIONS"])
 def upload_csv():
     if request.method == "OPTIONS":
@@ -150,6 +156,8 @@ def upload_csv():
 
     return jsonify({"message": "Devices added successfully!", "devices": devices_added})
 
+
+# Login
 @app.route("/login", methods=["POST"])
 def login():
     username = request.json.get("username")
@@ -166,5 +174,427 @@ def login():
     else:
         return jsonify({"success": False, "message": "Credenciales incorrectas"}), 401
 
+
+# Importar THINGS desde CSV
+@app.route("/import-things", methods=["GET", "POST"])
+def import_things():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/things.csv"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching CSV: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            query = """
+            MERGE (t:Thing {id: $id})
+            SET t.name = $name,
+                t.lat = toFloat($lat),
+                t.lon = toFloat($lon),
+                t.latest_value = $latest_value
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"],
+                "lat": row["lat"],
+                "lon": row["lon"],
+                "latest_value": row.get("latest_value", "")
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+
+
+# Importar SENSORS desde CSV
+@app.route("/import-sensors", methods=["GET", "POST"])
+def import_sensors():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/sensors.csv"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching sensors.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            query = """
+            MERGE (s:Sensor {id: $id})
+            SET s.name = $name,
+                s.entType = $entType,
+                s.unit = $unit,
+                s.description = $description
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"],
+                "entType": row.get("entType", ""),
+                "unit": row.get("unit", ""),
+                "description": row.get("description", "")
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+
+# Importar POWER desde CSV
+@app.route("/import-power", methods=["GET", "POST"])
+def import_power():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/power.csv"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching power.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            query = """
+            MERGE (p:Power {id: $id})
+            SET p.name = $name
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"]
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+
+@app.route("/import-network", methods=["GET", "POST"])
+def import_network():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/network.csv"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching network.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            query = """
+            MERGE (n:Network {id: $id})
+            SET n.name = $name
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"]
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+
+@app.route("/import-thingtype", methods=["GET", "POST"])
+def import_thingtype():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/thingtype.csv"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching thingtype.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            query = """
+            MERGE (t:ThingType {id: $id})
+            SET t.name = $name
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"]
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+
+###
+@app.route("/import-module", methods=["GET", "POST"])
+def import_module():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/module.csv"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching module.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            query = """
+            MERGE (m:Module {id: $id})
+            SET m.name = $name
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"]
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+##
+@app.route("/import-vendor", methods=["GET", "POST"])
+def import_vendor():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/vendors.csv"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching vendors.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            query = """
+            MERGE (v:Vendor {id: $id})
+            SET v.name = $name,
+                v.entType = $entType
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"],
+                "entType": row["entType"]
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+##
+@app.route("/import-manufacturer", methods=["GET", "POST"])
+def import_manufacturer():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/manufacturers.csv"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching manufacturers.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            query = """
+            MERGE (m:Manufacturer {id: $id})
+            SET m.name = $name
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"]
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+##
+@app.route("/import-location", methods=["GET", "POST"])
+def import_location():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/locations.csv"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching locations.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            query = """
+            MERGE (l:Location {id: $id})
+            SET l.name = $name
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"]
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+##
+@app.route("/import-department", methods=["GET", "POST"])
+def import_department():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/departments.csv"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching departments.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            # Solo procesar filas válidas
+            if not row.get("identifier") or not row.get("name"):
+                continue
+
+            query = """
+            MERGE (d:Department {id: $id})
+            SET d.name = $name
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"]
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+##
+@app.route("/import-application", methods=["GET", "POST"])
+def import_application():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/applications.csv"
+    
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching applications.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            # Solo procesar filas válidas
+            if not row.get("identifier") or not row.get("name"):
+                continue
+
+            query = """
+            MERGE (a:Application {id: $id})
+            SET a.name = $name
+            """
+            session.run(query, {
+                "id": row["identifier"],
+                "name": row["name"]
+            })
+            created += 1
+
+    return jsonify({"status": "ok", "imported": created})
+##
+@app.route("/import-relationships", methods=["GET", "POST"])
+def import_relationships():
+    url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/relation.csv"
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        csv_data = response.content.decode("utf-8").splitlines()
+    except Exception as e:
+        return jsonify({"error": f"Error fetching relation.csv: {str(e)}"}), 500
+
+    reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
+    created = 0
+
+    with driver.session() as session:
+        for row in reader:
+            try:
+                source = row["thingId"]
+                target = row["entityid"]
+                rel_type = row["relationshipname"]
+                properties = row.get("prop", "{}")
+
+                query = """
+                MATCH (a {id: $source}), (b {id: $target})
+                CALL apoc.create.relationship(a, $rel_type, apoc.convert.fromJsonMap($props), b)
+                YIELD rel
+                RETURN rel
+                """
+                session.run(query, {
+                    "source": source,
+                    "target": target,
+                    "rel_type": rel_type,
+                    "props": properties
+                })
+                created += 1
+            except Exception as e:
+                print(f"Error with relationship {row}: {str(e)}")
+
+    return jsonify({"status": "ok", "imported": created})
+
+## For show the graph
+@app.route("/graph-data", methods=["GET"])
+def graph_data():
+    query = """
+    MATCH (n)-[r]->(m)
+    RETURN n, r, m
+    """
+
+    nodes = {}
+    links = []
+
+    try:
+        with driver.session() as session:
+            results = session.run(query)
+            for record in results:
+                source = record["n"]
+                target = record["m"]
+                relation = record["r"]
+
+                # Agregar nodos únicos
+                for node in [source, target]:
+                    node_id = node["id"]
+                    if node_id not in nodes:
+                        nodes[node_id] = {
+                            "id": node_id,
+                            "label": list(node.labels)[0],  # por ejemplo 'Thing'
+                            "name": node.get("name", "")
+                        }
+
+                # Agregar relación
+                links.append({
+                    "source": source["id"],
+                    "target": target["id"],
+                    "type": relation.type
+                })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    return jsonify({
+        "nodes": list(nodes.values()),
+        "links": links
+    })
+
+# Ejecutar
 if __name__ == '__main__':
     app.run(debug=True)
+

@@ -1,40 +1,73 @@
- 
-import  { useState } from "react";
+import { useState, useEffect } from "react";
+import GraphVisualization from "./GraphVisualization";
+import "../styles/Chatbot.css";
+import { Send } from "lucide-react";
 
-const Chatbot = () => {
+function Chatbot() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
 
-  const sendMessage = () => {
-    if (input.trim() === "") return;
+  useEffect(() => {
+    document.body.style.backgroundImage = `url("/city.png")`;
+    document.body.style.backgroundSize = "cover";
+    document.body.style.backgroundRepeat = "no-repeat";
+    return () => (document.body.style.backgroundImage = "none");
+  }, []);
 
-    setMessages([...messages, { text: input, sender: "user" }]);
+  const handleSend = () => {
+    if (!input.trim()) return;
+    setMessages([...messages, { from: "user", text: input }]);
     setInput("");
   };
 
   return (
-    <div className="flex flex-col h-screen justify-center items-center bg-gray-100">
-      <div className="w-3/4 h-3/4 bg-white shadow-md rounded-lg p-4 overflow-y-auto">
-        {messages.map((msg, index) => (
-          <div key={index} className={`p-2 ${msg.sender === "user" ? "text-right" : "text-left"}`}>
-            <span className="bg-blue-500 text-white p-2 rounded">{msg.text}</span>
+    <div className="chatbot-layout">
+      <div className="chatbot-wrapper">
+        {/* Columna central: conversación */}
+        <div className="chat-column">
+          <div className="chat-messages">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`message-bubble ${msg.from === "user" ? "user" : "bot"}`}
+              >
+                {msg.text}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <div className="w-3/4 flex mt-4">
-        <input
-          type="text"
-          placeholder="Write you're  question ..."
-          className="border p-2 flex-grow rounded"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button className="bg-blue-500 text-white px-4 py-2 ml-2 rounded" onClick={sendMessage}>
-          Enviar
-        </button>
+          <div className="chat-input">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Posez votre question ici..."
+            />
+            <button onClick={handleSend}>
+              <Send size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Columna derecha: grafo + preguntas */}
+        <div className="chatbot-right-panel">
+          <div className="graph-container">
+            <GraphVisualization />
+          </div>
+
+          <div className="faq-container">
+            <h6 className="text-muted mb-2">Questions fréquentes</h6>
+            <button className="btn btn-sm btn-outline-secondary mb-2">
+              ¿Cuántos sensores hay?
+            </button>
+            <button className="btn btn-sm btn-outline-secondary mb-2">
+              ¿Dónde están los sensores de gas?
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+}
 
 export default Chatbot;
