@@ -11,12 +11,20 @@ from werkzeug.security import check_password_hash, generate_password_hash  # typ
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:5173", "http://frontend:5173", "http://frontend_badevel:5173", "*"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
-# Configuración de Neo4j
-NEO4J_URI = "bolt://localhost:7687"
-NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "Password123"
+# Configuración de Neo4j desde variables de entorno
+NEO4J_URI = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
+NEO4J_USER = os.environ.get("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "Password123")
+
+print(f"Connecting to Neo4j at {NEO4J_URI} with user {NEO4J_USER}")
 
 driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
@@ -63,11 +71,17 @@ def create_device():
 
 @app.route("/devices", methods=["GET"])
 def get_devices():
-    query = "MATCH (d:Device) RETURN d.name"
-    with driver.session() as session:
-        results = session.run(query)
-        devices = [record["d.name"] for record in results]
-    return jsonify({"devices": devices})
+    try:
+        query = "MATCH (d:Device) RETURN d.name"
+        with driver.session() as session:
+            results = session.run(query)
+            devices = [record["d.name"] for record in results]
+        return jsonify({"devices": devices})
+    except Exception as e:
+        print(f"Error in get_devices: {str(e)}")
+        print(f"Error type: {type(e)}")
+        print(f"Error details: {e.__dict__}")
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
 @app.route("/devices/<name>", methods=["PUT"])
 def update_device(name):
@@ -134,15 +148,12 @@ def upload_csv():
 
     if "file" not in request.files:
         return jsonify({"error": "No file provided"}), 400
-
     file = request.files["file"]
     if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
-
     devices_added = []
     stream = file.stream.read().decode("utf-8").splitlines()
     csv_reader = csv.DictReader(stream)
-
     with driver.session() as session:
         for row in csv_reader:
             name = row.get("name")
@@ -153,7 +164,6 @@ def upload_csv():
             device_name = result.single()
             if device_name:
                 devices_added.append(device_name[0])
-
     return jsonify({"message": "Devices added successfully!", "devices": devices_added})
 
 
@@ -220,14 +230,21 @@ def import_sensors():
         response = requests.get(url)
         response.raise_for_status()
         csv_data = response.content.decode("utf-8").splitlines()
+        print(f"CSV data loaded: {len(csv_data)} lines")
+        
+        # Afficher l'en-tête et les premières lignes pour déboguer
+        for i, line in enumerate(csv_data[:3]):
+            print(f"Line {i}: {line}")
     except Exception as e:
         return jsonify({"error": f"Error fetching sensors.csv: {str(e)}"}), 500
 
     reader = csv.DictReader(io.StringIO("\n".join(csv_data)))
     created = 0
 
+    print("Creating/updating Sensor nodes...")
     with driver.session() as session:
         for row in reader:
+            print(f"Processing sensor: {row}")
             query = """
             MERGE (s:Sensor {id: $id})
             SET s.name = $name,
@@ -243,8 +260,15 @@ def import_sensors():
                 "description": row.get("description", "")
             })
             created += 1
-
-    return jsonify({"status": "ok", "imported": created})
+            
+    print(f"Successfully created/updated {created} Sensor nodes")
+    # Vérifier que les nœuds sont bien créés en exécutant une requête de comptage
+    with driver.session() as session:
+        result = session.run("MATCH (s:Sensor) RETURN count(s) as count")
+        count = result.single()["count"]
+        print(f"Total Sensor nodes in database: {count}")
+    
+    return jsonify({"status": "ok", "imported": created, "total_nodes": count})
 
 # Importar POWER desde CSV
 @app.route("/import-power", methods=["GET", "POST"])
@@ -513,7 +537,7 @@ def import_application():
 @app.route("/import-relationships", methods=["GET", "POST"])
 def import_relationships():
     url = "https://raw.githubusercontent.com/josephazar/graph_of_things/main/Neo4jThings/relation.csv"
-
+    
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -550,7 +574,6 @@ def import_relationships():
 
     return jsonify({"status": "ok", "imported": created})
 
-## For show the graph
 @app.route("/graph-data", methods=["GET"])
 def graph_data():
     query = """
@@ -575,7 +598,7 @@ def graph_data():
                     if node_id not in nodes:
                         nodes[node_id] = {
                             "id": node_id,
-                            "label": list(node.labels)[0],  # por ejemplo 'Thing'
+                            "label": list(node.labels)[0],
                             "name": node.get("name", "")
                         }
 
@@ -587,14 +610,158 @@ def graph_data():
                 })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error in graph_data: {str(e)}")
+        print(f"Error type: {type(e)}")
+        print(f"Error details: {e.__dict__}")
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
 
     return jsonify({
         "nodes": list(nodes.values()),
         "links": links
     })
 
+# Endpoint para crear nodos de diferentes tipos
+@app.route("/create-node", methods=["POST"])
+def create_node():
+    data = request.json
+    node_type = data.get("type")
+    name = data.get("name")
+    properties = data.get("properties", {})
+    
+    if not node_type or not name:
+        return jsonify({"error": "Missing node type or name"}), 400
+    
+    # Propiedades básicas para todos los nodos
+    node_props = {
+        "name": name,
+        "id": f"{node_type.lower()}_{name.lower().replace(' ', '_')}_{int(datetime.datetime.now().timestamp())}"
+    }
+    
+    # Añadir propiedades adicionales
+    node_props.update(properties)
+    
+    # Construir query para crear el nodo con el tipo especificado
+    query = f"CREATE (n:{node_type} $props) RETURN n.id as id, n.name as name"
+    
+    try:
+        with driver.session() as session:
+            result = session.run(query, props=node_props)
+            created_node = result.single()
+            
+            if created_node:
+                return jsonify({
+                    "success": True,
+                    "node": {
+                        "id": created_node["id"],
+                        "name": created_node["name"],
+                        "type": node_type
+                    }
+                })
+            else:
+                return jsonify({"error": "Node could not be created"}), 500
+    except Exception as e:
+        print(f"Error creating node: {str(e)}")
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+
+# Endpoint para crear relaciones entre nodos
+@app.route("/create-relationship", methods=["POST"])
+def create_relationship():
+    data = request.json
+    source_id = data.get("source_id")
+    target_id = data.get("target_id")
+    rel_type = data.get("rel_type")
+    properties = data.get("properties", {})
+    
+    if not source_id or not target_id or not rel_type:
+        return jsonify({"error": "Missing source, target or relationship type"}), 400
+    
+    # Query para crear la relación
+    query = """
+    MATCH (a), (b)
+    WHERE a.id = $source_id AND b.id = $target_id
+    CREATE (a)-[r:$rel_type $props]->(b)
+    RETURN a.id as source, b.id as target, type(r) as type
+    """
+    
+    try:
+        with driver.session() as session:
+            result = session.run(query, 
+                                source_id=source_id, 
+                                target_id=target_id, 
+                                rel_type=rel_type, 
+                                props=properties)
+            created_rel = result.single()
+            
+            if created_rel:
+                return jsonify({
+                    "success": True,
+                    "relationship": {
+                        "source": created_rel["source"],
+                        "target": created_rel["target"],
+                        "type": created_rel["type"]
+                    }
+                })
+            else:
+                return jsonify({"error": "Relationship could not be created"}), 500
+    except Exception as e:
+        print(f"Error creating relationship: {str(e)}")
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+
+# Endpoint para obtener todos los nodos de un tipo específico
+@app.route("/nodes/<node_type>", methods=["GET"])
+def get_nodes_by_type(node_type):
+    try:
+        # Handle variations in node type casing (Sensor vs sensor vs SENSOR)
+        # Convert first letter to uppercase and the rest to lowercase for the query
+        formatted_node_type = node_type.capitalize()
+        
+        # For plural forms, remove trailing 's' and capitalize
+        if formatted_node_type.endswith('s'):
+            singular_type = formatted_node_type[:-1] 
+            query = f"""
+            MATCH (n) 
+            WHERE n:{formatted_node_type} OR n:{singular_type}
+            RETURN n
+            """
+        else:
+            query = f"MATCH (n:{formatted_node_type}) RETURN n"
+
+        print(f"Executing Neo4j query: {query}")
+        
+        with driver.session() as session:
+            results = session.run(query)
+            nodes = []
+            for record in results:
+                node = record["n"]
+                node_data = dict(node.items())  # Convertir toutes les propriétés en dictionnaire
+                # Assurer que id et name existent
+                if "id" not in node_data and node.id is not None:
+                    node_data["id"] = node.id
+                if "name" not in node_data and "name" in node.keys():
+                    node_data["name"] = node["name"]
+                nodes.append(node_data)
+            
+            print(f"Found {len(nodes)} nodes of type {node_type}")
+            print(f"Node data: {nodes}")
+            
+        return jsonify({"nodes": nodes})
+    except Exception as e:
+        print(f"Error getting nodes: {str(e)}")
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+
 # Ejecutar
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -1,11 +1,12 @@
 from neo4j import GraphDatabase
+import os
 
-# Configura esto con tus datos reales de Neo4j
-NEO4J_URI = "bolt://localhost:7687"
-NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "test"
+# Obtener variables de entorno o usar valores predeterminados
+URI = os.environ.get("NEO4J_URI", "bolt://neo4j:7687")
+USER = os.environ.get("NEO4J_USER", "neo4j")
+PASSWORD = os.environ.get("NEO4J_PASSWORD", "Password123")
 
-driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+driver = GraphDatabase.driver(URI, auth=(USER, PASSWORD))
 
 def close_driver():
     driver.close()
